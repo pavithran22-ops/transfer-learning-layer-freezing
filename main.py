@@ -148,13 +148,16 @@ def run_pipeline():
     compare_models(metrics_a, metrics_b)
 
     # -- 7. Generate plots --------------------------------------------------
-    print("\n[STEP 7/7] Generating plots ...")
+    print("\n[STEP 7/7] Generating plots & sample image visualisations ...")
     generate_all_plots(
         history_a,
         [history_b_head, history_b_fine],
         metrics_a,
         metrics_b,
         class_names,
+        model_for_samples=model_b,
+        test_ds=test_ds,
+        data_dir=config.DATA_DIR,
     )
 
     # -- Final summary ------------------------------------------------------

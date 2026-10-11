@@ -403,6 +403,18 @@ Detailed class-by-class evaluation on the test set:
   <img src="results/confusion_matrix_model_b.png" alt="Confusion Matrix Model B" width="400"/>
 </p>
 
+### 4. Sample Test Predictions with Confidence
+Visual inspection of model predictions on test images with predicted class and confidence score:
+<p align="center">
+  <img src="results/sample_predictions.png" alt="Sample Predictions" width="850"/>
+</p>
+
+### 5. Sample Dataset Images by Class
+Representative sample images from each class directory in the dataset:
+<p align="center">
+  <img src="results/sample_dataset_images.png" alt="Dataset Samples" width="750"/>
+</p>
+
 ---
 
 ## Example Comparison Table

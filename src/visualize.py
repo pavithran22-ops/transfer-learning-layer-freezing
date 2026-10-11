@@ -185,9 +185,119 @@ def plot_comparison_bars(metrics_a: dict, metrics_b: dict):
     _save(fig, "comparison_bar_charts.png")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 4.  All-in-one entry point called from main.py
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# 4.  Sample images visualizations
+# -----------------------------------------------------------------------------
+
+def plot_sample_predictions(
+    model,
+    test_ds,
+    class_names: list,
+    num_samples: int = 6,
+    filename: str = "sample_predictions.png",
+):
+    """Display a grid of test images with their true and predicted labels."""
+    if model is None or test_ds is None:
+        return
+
+    images_list, labels_list = [], []
+    for imgs, lbls in test_ds:
+        images_list.append(imgs.numpy())
+        labels_list.append(lbls.numpy())
+        if sum(len(x) for x in images_list) >= num_samples:
+            break
+
+    if not images_list:
+        return
+
+    all_images = np.concatenate(images_list, axis=0)[:num_samples]
+    all_labels = np.concatenate(labels_list, axis=0)[:num_samples]
+
+    preds = model.predict(all_images, verbose=0)
+    pred_indices = np.argmax(preds, axis=1)
+    true_indices = np.argmax(all_labels, axis=1)
+    confidences  = np.max(preds, axis=1)
+
+    n = len(all_images)
+    cols = min(3, n)
+    rows = (n + cols - 1) // cols
+    fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 4 * rows))
+    axes_flat = np.array(axes).flatten()
+
+    for i in range(n):
+        # Reverse MobileNetV2 preprocessing: [-1, 1] -> [0, 1]
+        img = (all_images[i] + 1.0) / 2.0
+        img = np.clip(img, 0.0, 1.0)
+
+        true_cls = class_names[true_indices[i]]
+        pred_cls = class_names[pred_indices[i]]
+        conf = confidences[i] * 100
+
+        is_correct = (true_indices[i] == pred_indices[i])
+        color = "#2E7D32" if is_correct else "#C62828"
+
+        axes_flat[i].imshow(img)
+        axes_flat[i].axis("off")
+        title_text = f"True: {true_cls}\nPred: {pred_cls} ({conf:.1f}%)"
+        axes_flat[i].set_title(title_text, fontsize=10, fontweight="bold", color=color)
+
+    for j in range(n, len(axes_flat)):
+        axes_flat[j].axis("off")
+
+    fig.suptitle("Sample Test Predictions (Model B -- Fine-Tuned)", fontsize=14, fontweight="bold", y=1.02)
+    _save(fig, filename)
+
+
+def plot_dataset_samples(
+    data_dir: str,
+    class_names: list,
+    samples_per_class: int = 3,
+    filename: str = "sample_dataset_images.png",
+):
+    """Show representative sample images from each class folder."""
+    from PIL import Image
+
+    num_classes = len(class_names)
+    if num_classes == 0:
+        return
+
+    fig, axes = plt.subplots(
+        num_classes, samples_per_class,
+        figsize=(3.5 * samples_per_class, 3.2 * num_classes),
+    )
+
+    axes_grid = np.array(axes).reshape(num_classes, samples_per_class)
+
+    for row_idx, cls in enumerate(class_names):
+        cls_folder = os.path.join(data_dir, cls)
+        if not os.path.isdir(cls_folder):
+            continue
+        files = [
+            f for f in sorted(os.listdir(cls_folder))
+            if os.path.splitext(f)[1].lower() in config.VALID_EXTENSIONS
+        ][:samples_per_class]
+
+        for col_idx in range(samples_per_class):
+            ax = axes_grid[row_idx, col_idx]
+            if col_idx < len(files):
+                img_path = os.path.join(cls_folder, files[col_idx])
+                try:
+                    im = Image.open(img_path).convert("RGB")
+                    ax.imshow(im)
+                    if col_idx == 0:
+                        ax.set_ylabel(cls, fontsize=11, fontweight="bold")
+                except Exception:
+                    pass
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+    fig.suptitle("Sample Dataset Images by Class", fontsize=14, fontweight="bold", y=1.01)
+    _save(fig, filename)
+
+
+# -----------------------------------------------------------------------------
+# 5.  All-in-one entry point called from main.py
+# -----------------------------------------------------------------------------
 
 def generate_all_plots(
     history_a,
@@ -195,11 +305,14 @@ def generate_all_plots(
     metrics_a: dict,
     metrics_b: dict,
     class_names: list,
+    model_for_samples=None,
+    test_ds=None,
+    data_dir: str = config.DATA_DIR,
 ):
     """
     Convenience wrapper that generates every plot and saves them to results/.
     """
-    print("\n[INFO] Generating visualisations …")
+    print("\n[INFO] Generating visualisations ...")
 
     plot_training_curves(history_a, history_b_list)
 
@@ -215,5 +328,11 @@ def generate_all_plots(
     )
 
     plot_comparison_bars(metrics_a, metrics_b)
+
+    if model_for_samples is not None and test_ds is not None:
+        plot_sample_predictions(model_for_samples, test_ds, class_names)
+
+    if data_dir and os.path.isdir(data_dir):
+        plot_dataset_samples(data_dir, class_names)
 
     print("[INFO] All plots saved to results/")
