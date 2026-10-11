@@ -1,0 +1,59 @@
+# ── Python cache ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+.env
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Dataset (do NOT commit large datasets) ────────────────────────────────────
+data/custom_dataset/
+data/*.zip
+data/*.tar
+data/*.tar.gz
+
+# ── Trained model weights (can be large) ──────────────────────────────────────
+models/*.keras
+models/*.h5
+models/*.pb
+models/saved_model/
+models/model_b_phase1_best.keras
+
+# ── Generated results ──────────────────────────────────────────────────────────
+results/*.png
+results/*.csv
+
+# ── Jupyter / IPython ─────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── IDE / editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+tensorboard_logs/
+
+# ── TensorFlow / Keras ────────────────────────────────────────────────────────
+*.ckpt
+*.index
+*.data-00000-of-00001
+checkpoint
