@@ -30,23 +30,15 @@ def _build_head(base: keras.Model, num_classes: int, model_name: str) -> keras.M
     x = keras.layers.GlobalAveragePooling2D(name="gap")(x)
     x = keras.layers.Dropout(config.DROPOUT_RATE, name="dropout")(x)
 
-    if num_classes == 2:
-        outputs = keras.layers.Dense(1, activation="sigmoid", name="output")(x)
-    else:
-        outputs = keras.layers.Dense(num_classes, activation="softmax", name="output")(x)
-
+    outputs = keras.layers.Dense(num_classes, activation="softmax", name="output")(x)
     model = keras.Model(inputs=base.input, outputs=outputs, name=model_name)
     return model
 
 
 def _loss_and_metrics(num_classes: int):
     """Return appropriate loss function and metrics list."""
-    if num_classes == 2:
-        loss    = "binary_crossentropy"
-        metrics = ["accuracy", keras.metrics.AUC(name="auc")]
-    else:
-        loss    = "categorical_crossentropy"
-        metrics = ["accuracy", keras.metrics.TopKCategoricalAccuracy(k=min(3, num_classes), name="top3_acc")]
+    loss = "categorical_crossentropy"
+    metrics = ["accuracy"]
     return loss, metrics
 
 
@@ -151,26 +143,29 @@ def unfreeze_for_finetuning(model: keras.Model, num_classes: int) -> keras.Model
     -------
     model : recompiled keras.Model  (selected layers now trainable)
     """
-    # The sub-model called 'mobilenetv2_...' is the base
+    # Find whether base is nested as a sub-model or directly flattened in model.layers
     base = None
     for layer in model.layers:
         if "mobilenet" in layer.name.lower():
             base = layer
             break
 
-    if base is None:
-        raise RuntimeError("Could not locate the MobileNetV2 base inside Model B.")
+    target_layers = base.layers if base is not None else model.layers[:-3]
 
-    # Unfreeze the entire base first, then selectively re-freeze
-    base.trainable = True
-
-    for layer in base.layers[:config.FINE_TUNE_AT]:
-        layer.trainable = False  # keep early layers frozen
-
-    # Always freeze BatchNormalization layers to prevent instability
-    for layer in base.layers:
-        if isinstance(layer, keras.layers.BatchNormalization):
+    # Unfreeze layers from config.FINE_TUNE_AT onward
+    for i, layer in enumerate(target_layers):
+        if i >= config.FINE_TUNE_AT:
+            # Keep BatchNormalization frozen to prevent training instability
+            if isinstance(layer, (keras.layers.BatchNormalization, tf.keras.layers.BatchNormalization)):
+                layer.trainable = False
+            else:
+                layer.trainable = True
+        else:
             layer.trainable = False
+
+    # Ensure head layers remain trainable
+    for layer in model.layers[-3:]:
+        layer.trainable = True
 
     # Recompile with smaller learning rate
     loss, metrics = _loss_and_metrics(num_classes)

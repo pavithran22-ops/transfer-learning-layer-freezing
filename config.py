@@ -32,16 +32,16 @@ RANDOM_SEED     = 42                 # fixed seed for reproducibility
 
 # ─── Training — Model A (Frozen) ──────────────────────────────────────────────
 BATCH_SIZE_A    = 32
-EPOCHS_A        = 20
+EPOCHS_A        = 5
 LR_A            = 1e-3               # Adam learning rate for head training
 
 # ─── Training — Model B (Fine-Tuned) ──────────────────────────────────────────
 BATCH_SIZE_B    = 32
 # Phase 1 (head-only) — same as Model A
-EPOCHS_B_HEAD   = 10
+EPOCHS_B_HEAD   = 3
 LR_B_HEAD       = 1e-3
 # Phase 2 (fine-tuning deeper layers)
-EPOCHS_B_FINE   = 20
+EPOCHS_B_FINE   = 5
 LR_B_FINE       = 1e-5               # lower LR for fine-tuning
 FINE_TUNE_AT    = 100                # unfreeze MobileNetV2 layers from this index onward
 

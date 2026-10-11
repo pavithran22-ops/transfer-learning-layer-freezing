@@ -31,22 +31,13 @@ import config
 def get_predictions(model: tf.keras.Model, dataset: tf.data.Dataset, num_classes: int):
     """
     Run *model* over *dataset* and return (y_true, y_pred) as integer arrays.
-
-    Handles both binary (sigmoid) and multiclass (softmax) outputs.
     """
     y_true_list, y_pred_list = [], []
 
     for images, labels in dataset:
         preds = model.predict(images, verbose=0)
-
-        if num_classes == 2:
-            # sigmoid output — shape (N, 1)
-            pred_classes = (preds.squeeze() >= 0.5).astype(int)
-            true_classes = np.argmax(labels.numpy(), axis=1)
-        else:
-            # softmax output — shape (N, C)
-            pred_classes = np.argmax(preds, axis=1)
-            true_classes = np.argmax(labels.numpy(), axis=1)
+        pred_classes = np.argmax(preds, axis=1)
+        true_classes = np.argmax(labels.numpy(), axis=1)
 
         y_pred_list.extend(pred_classes.tolist())
         y_true_list.extend(true_classes.tolist())
@@ -153,20 +144,20 @@ def compare_models(metrics_a: dict, metrics_b: dict) -> pd.DataFrame:
     if acc_b > acc_a:
         winner = metrics_b["model_name"]
         margin = acc_b - acc_a
-        print(f"\n✅  {winner} achieved higher test accuracy by {margin:.2f}%.")
+        print(f"\n[WINNER] {winner} achieved higher test accuracy by {margin:.2f}%.")
     elif acc_a > acc_b:
         winner = metrics_a["model_name"]
         margin = acc_a - acc_b
-        print(f"\n✅  {winner} achieved higher test accuracy by {margin:.2f}%.")
+        print(f"\n[WINNER] {winner} achieved higher test accuracy by {margin:.2f}%.")
     else:
-        print("\n⚖️  Both models achieved identical test accuracy.")
+        print("\n[TIE] Both models achieved identical test accuracy.")
 
     return df
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # 4.  Load trained model for inference
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def load_trained_model(model_path: str) -> tf.keras.Model:
     """Load a saved Keras model from *model_path* with clear error handling."""
@@ -175,5 +166,5 @@ def load_trained_model(model_path: str) -> tf.keras.Model:
             f"No trained model found at:\n  {model_path}\n"
             "Please run `python main.py` first to train the models."
         )
-    print(f"[INFO] Loading model from {model_path} …")
+    print(f"[INFO] Loading model from {model_path} ...")
     return tf.keras.models.load_model(model_path)

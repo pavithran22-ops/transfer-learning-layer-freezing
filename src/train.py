@@ -17,25 +17,26 @@ import config
 from src.model_builder import build_model_a, build_model_b_phase1, unfreeze_for_finetuning
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Shared callbacks factory
-# ─────────────────────────────────────────────────────────────────────────────
+def safe_save_model(model: keras.Model, filepath: str, max_retries: int = 5):
+    """Save Keras model with retries to handle Windows/OneDrive file-locking."""
+    for attempt in range(max_retries):
+        try:
+            model.save(filepath)
+            return
+        except PermissionError:
+            if attempt < max_retries - 1:
+                time.sleep(1.0)
+            else:
+                raise
 
-def _make_callbacks(checkpoint_path: str, monitor: str = "val_accuracy") -> list:
+
+def _make_callbacks(monitor: str = "val_accuracy") -> list:
     """
-    Return a list of standard Keras callbacks:
-    - ModelCheckpoint  — saves the best model weights
-    - EarlyStopping    — halts training when *monitor* stops improving
-    - ReduceLROnPlateau — halves LR when plateau is detected
+    Return standard Keras callbacks:
+    - EarlyStopping    -- halts when *monitor* stops improving & restores best weights
+    - ReduceLROnPlateau -- halves LR when plateau is detected
     """
     callbacks = [
-        keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_path,
-            monitor=monitor,
-            save_best_only=True,
-            save_weights_only=False,
-            verbose=1,
-        ),
         keras.callbacks.EarlyStopping(
             monitor=monitor,
             patience=config.PATIENCE_ES,
@@ -79,7 +80,7 @@ def train_model_a(
 
     model = build_model_a(num_classes)
 
-    callbacks = _make_callbacks(config.MODEL_A_PATH)
+    callbacks = _make_callbacks()
 
     t_start = time.time()
     history = model.fit(
@@ -92,15 +93,15 @@ def train_model_a(
     duration = time.time() - t_start
 
     # Persist the best model
-    model.save(config.MODEL_A_PATH)
-    print(f"\n[Model A] Training complete in {duration:.1f}s — saved to {config.MODEL_A_PATH}")
+    safe_save_model(model, config.MODEL_A_PATH)
+    print(f"\n[Model A] Training complete in {duration:.1f}s -- saved to {config.MODEL_A_PATH}")
 
     return model, history, duration
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Model B — Fine-Tuned Transfer Learning
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def train_model_b(
     train_ds: tf.data.Dataset,
@@ -109,8 +110,8 @@ def train_model_b(
 ) -> tuple:
     """
     Build and train Model B in two phases:
-      Phase 1 — frozen base, head only.
-      Phase 2 — selected deeper layers unfrozen, low LR.
+      Phase 1 -- frozen base, head only.
+      Phase 2 -- selected deeper layers unfrozen, low LR.
 
     Returns
     -------
@@ -122,15 +123,14 @@ def train_model_b(
     os.makedirs(config.MODELS_DIR, exist_ok=True)
 
     print("\n" + "="*60)
-    print("  MODEL B — Fine-Tuned Transfer Learning")
+    print("  MODEL B -- Fine-Tuned Transfer Learning")
     print("="*60)
 
-    # ── Phase 1: train head only ───────────────────────────────────────────
+    # -- Phase 1: train head only -------------------------------------------
     print("\n--- Phase 1: Training classification head (base frozen) ---")
     model = build_model_b_phase1(num_classes)
 
-    ckpt_phase1 = os.path.join(config.MODELS_DIR, "model_b_phase1_best.keras")
-    callbacks_p1 = _make_callbacks(ckpt_phase1)
+    callbacks_p1 = _make_callbacks()
 
     t_start = time.time()
     history_head = model.fit(
@@ -141,11 +141,11 @@ def train_model_b(
         verbose=1,
     )
 
-    # ── Phase 2: fine-tune deeper layers ──────────────────────────────────
+    # -- Phase 2: fine-tune deeper layers ----------------------------------
     print("\n--- Phase 2: Fine-tuning deeper layers (low LR) ---")
     model = unfreeze_for_finetuning(model, num_classes)
 
-    callbacks_p2 = _make_callbacks(config.MODEL_B_PATH)
+    callbacks_p2 = _make_callbacks()
 
     history_fine = model.fit(
         train_ds,
@@ -157,7 +157,7 @@ def train_model_b(
     duration = time.time() - t_start
 
     # Persist the best model
-    model.save(config.MODEL_B_PATH)
-    print(f"\n[Model B] Training complete in {duration:.1f}s — saved to {config.MODEL_B_PATH}")
+    safe_save_model(model, config.MODEL_B_PATH)
+    print(f"\n[Model B] Training complete in {duration:.1f}s -- saved to {config.MODEL_B_PATH}")
 
     return model, history_head, history_fine, duration

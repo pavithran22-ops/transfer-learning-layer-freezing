@@ -193,11 +193,10 @@ def _preprocess(image_path: tf.Tensor, label: tf.Tensor, num_classes: int) -> Tu
 def _augment(image: tf.Tensor, label: tf.Tensor) -> Tuple:
     """Apply random augmentations to training images only."""
     image = tf.image.random_flip_left_right(image)
+    image = tf.image.random_flip_up_down(image)
     image = tf.image.random_brightness(image, max_delta=0.2)
     image = tf.image.random_contrast(image, lower=0.8, upper=1.2)
     image = tf.image.random_saturation(image, lower=0.8, upper=1.2)
-    # Random rotation ±15° via crop-and-resize trick
-    image = tf.keras.layers.RandomRotation(0.05)(image, training=True)
     return image, label
 
 
