@@ -30,9 +30,9 @@ models/*.pb
 models/saved_model/
 models/model_b_phase1_best.keras
 
-# ── Generated results ──────────────────────────────────────────────────────────
-results/*.png
-results/*.csv
+# ── Generated results (uncomment if you wish to ignore experiment runs) ──────
+# results/*.png
+# results/*.csv
 
 # ── Jupyter / IPython ─────────────────────────────────────────────────────────
 .ipynb_checkpoints/

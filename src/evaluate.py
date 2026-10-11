@@ -137,10 +137,31 @@ def compare_models(metrics_a: dict, metrics_b: dict) -> pd.DataFrame:
     print(df.to_string(index=False))
     print("="*70)
 
-    # ── Announce the winner ───────────────────────────────────────────────
+    # -- Console Bar Charts ------------------------------------------------
     acc_a = metrics_a["test_accuracy"]
     acc_b = metrics_b["test_accuracy"]
+    t_a   = metrics_a["training_time_s"]
+    t_b   = metrics_b["training_time_s"]
 
+    print("\n" + "-"*70)
+    print("  ACCURACY GRAPH")
+    print("-" * 70)
+    bar_a = "#" * int(acc_a // 2.5)
+    bar_b = "#" * int(acc_b // 2.5)
+    print(f"  Model A (Frozen)    : [{bar_a:<40}] {acc_a:.1f}%")
+    print(f"  Model B (Fine-Tuned): [{bar_b:<40}] {acc_b:.1f}%")
+
+    print("\n" + "-"*70)
+    print("  TRAINING TIME GRAPH (lower is faster)")
+    print("-" * 70)
+    max_t = max(t_a, t_b, 0.1)
+    len_a = int((t_a / max_t) * 40)
+    len_b = int((t_b / max_t) * 40)
+    print(f"  Model A (Frozen)    : [{'#' * len_a:<40}] {t_a:.1f}s")
+    print(f"  Model B (Fine-Tuned): [{'#' * len_b:<40}] {t_b:.1f}s")
+    print("-" * 70)
+
+    # -- Announce the winner -----------------------------------------------
     if acc_b > acc_a:
         winner = metrics_b["model_name"]
         margin = acc_b - acc_a

@@ -381,6 +381,30 @@ After running `python main.py`, the following files are generated:
 
 ---
 
+## 📈 Visual Results & Graphs
+
+### 1. Training & Validation Curves
+Tracks accuracy and loss progression across training epochs for both models:
+<p align="center">
+  <img src="results/training_curves.png" alt="Training & Validation Curves" width="850"/>
+</p>
+
+### 2. Model Performance & Training Time Comparison
+Direct side-by-side comparison of test accuracy and training time:
+<p align="center">
+  <img src="results/comparison_bar_charts.png" alt="Model Comparison Bar Charts" width="850"/>
+</p>
+
+### 3. Confusion Matrices
+Detailed class-by-class evaluation on the test set:
+<p align="center">
+  <img src="results/confusion_matrix_model_a.png" alt="Confusion Matrix Model A" width="400"/>
+  &nbsp;&nbsp;
+  <img src="results/confusion_matrix_model_b.png" alt="Confusion Matrix Model B" width="400"/>
+</p>
+
+---
+
 ## Example Comparison Table
 
 > ⚠️ **Illustrative only.** Actual results depend on your dataset, hardware, and training settings. Do not interpret these as guaranteed values.
